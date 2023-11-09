@@ -1,12 +1,14 @@
 import { yupResolver } from '@hookform/resolvers/yup'
 import React from 'react'
 import { useForm } from 'react-hook-form'
+import { Link, useHistory } from 'react-router-dom/cjs/react-router-dom.min'
 import { toast } from 'react-toastify'
 import * as Yup from 'yup'
 
 import Loginimage from '../../assets/login-image.svg'
 import Logo from '../../assets/logo.svg'
 import Button from '../../Components/Button'
+import { useUser } from '../../hooks/UserContext'
 import api from '../../services/api'
 import {
   Container,
@@ -19,6 +21,10 @@ import {
 } from './styles'
 
 function Login() {
+  const history = useHistory()
+  const { putUseDate, userDate } = useUser()
+  console.log(userDate)
+
   const schema = Yup.object().shape({
     email: Yup.string()
       .email('Digite um e-mail válido')
@@ -37,18 +43,30 @@ function Login() {
   })
 
   const onSubmit = async clientData => {
-    const response = await toast.promise(
-      api.post('sessions', {
-        email: clientData.email,
-        password: clientData.password
-      }),
-      {
-        pending: 'Verificando seus dados',
-        success: 'Seja bem-vindo(a)',
-        error: 'Verifique seu e-mail e senha'
+    try {
+      const { data } = await toast.promise(
+        api.post('sessions', {
+          email: clientData.email,
+          password: clientData.password
+        }),
+        {
+          pending: 'verificando os seus dados',
+          success: 'Seja bem-vindo(a)'
+        }
+      )
+
+      putUseDate(data)
+
+      setTimeout(() => {
+        history.push('/')
+      }, 1000)
+    } catch (error) {
+      if (error.response && error.response.status === 400) {
+        toast.error('Verifique seu e-mail e senha')
+      } else {
+        toast.error('Falha no servidor! Tente novamente')
       }
-    )
-    console.log(response)
+    }
   }
 
   return (
@@ -81,7 +99,10 @@ function Login() {
         </form>
 
         <SingInLink>
-          Não possui contar ? <a>Cadastrar</a>
+          Não possui contar?{' '}
+          <Link style={{ color: 'white' }} to="/cadastro">
+            Cadastrar
+          </Link>
         </SingInLink>
       </ContainerItens>
     </Container>
